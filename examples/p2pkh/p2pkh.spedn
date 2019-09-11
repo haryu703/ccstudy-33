@@ -1,0 +1,15 @@
+/**
+ * @param {Ripemd160} pubKeyHash - pubkey-hash
+ */
+contract PayToPublicKeyHash(Ripemd160 pubKeyHash) {
+  /**
+   * @param {PubKey} pubKey - pubkey
+   * @param {Sig} sig - signature
+   */
+  challenge spend(PubKey pubKey, Sig sig) {
+    // OP_HASH160 <pubkey-hash> OP_EQUALVERIFY
+    verify hash160(pubKey) == pubKeyHash;
+    // OP_CHECKSIG
+    verify checkSig(sig, pubKey);
+  }
+}
