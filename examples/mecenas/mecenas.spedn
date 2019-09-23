@@ -2,73 +2,64 @@
  * @param {Ripemd160} pkh - `protege()` 用の引き出し先アドレス
  * @param {Ripemd160} pkh2 - `mecenas()` 用の引き出し先アドレス
  * @param {int} pledge - `protege()` で一度に引き出せる金額
+ * @param {TimeSpan} period - 引き出し間隔
  */
-contract Mecenas(Ripemd160 pkh, Ripemd160 pkh2, int pledge) {
-  /**
-   * @param {PubKey} pk - 署名した秘密鍵に対応する公開鍵
-   * @param {Sig} sig - トランザクション全体の署名
-   * @param {bin} ver - nVersion
-   * @param {bin} hPhSo - hashPrevouts + hashSequence + outpoint
-   * @param {bin} scriptCode - Contract の redeemScript
-   * @param {bin} value - UTXO に含まれる Satoshis
-   * @param {bin} nSequence - TxOut の nSequence
-   * @param {bin} hashOutput - hashOutputs
-   * @param {bin} tail - nLocktime + sighash
-   */
-  challenge protege(PubKey pk, Sig sig, bin ver, bin hPhSo, bin scriptCode, bin value, bin nSequence, bin hashOutput, bin tail ) {
-    // データサイズの検証
-    verify size(ver) == 4;
-    verify size(hPhSo) == 100;
-    verify size(value) == 8;
-    verify size(nSequence) == 4;
-    verify size(hashOutput) == 32;
-    verify size(tail) == 8;
+contract Mecenas(Ripemd160 pkh, Ripemd160 pkh2, int pledge, TimeSpan period) {
 
-    //verify hash160(pk) == pkh;
+    /**
+     * @param {PubKey} pk - 署名した秘密鍵に対応する公開鍵
+     * @param {Sig} sig - トランザクション全体の署名
+     * @param {bin} preimage - 署名前のシリアライズされたトランザクション
+     */
+    challenge protege(PubKey pk, Sig sig, bin preimage) {
 
-    // トランザクションの検証
-    verify checkSig(sig, pk);
-    // 引数から preimage を復元する
-    bin preimage = ver . hPhSo . scriptCode . value . nSequence . hashOutput . tail;
-    // preimage の検証
-    verify checkDataSig(toDataSig(sig), sha256(preimage), pk);
-    // これ以降、 preimage の復元に使われたデータは実際のトランザクションと一致する
+        // preimage deserializaion
+        bin ver = fst(preimage @ 4); // nVersion
+        bin tail= snd(preimage @ size(preimage) - 40); // hashOutput + nLocktime + sighash
+        bin hashOutput= fst(tail @ 32);
+        bin torso =  fst(preimage @ size(preimage) - 44);
+        bin belly = snd(torso @ 104);
+        bin [scriptCode,value] = belly @ size(belly) - 8;
 
-    verify bin2num(ver) >= 2;
-    // 引き出し間隔は30日
-    // verify checkSequence(30d);
-    // サンプルの動作確認に30日は長すぎる
-    verify checkSequence(512s); // 時間で指定する場合は512秒単位で切り捨てられる
+        //verify hash160(pk) == pkh; // Anyone Can Execute
+        // トランザクションの検証
+        verify checkSig(sig, pk);
+        // preimage の検証
+        verify checkDataSig(toDataSig(sig), sha256(preimage), pk);
+        // 上記2つの検証によって preimage は実際のトランザクションと一致することが検証された
 
-    int fee = 1000;
-    bin amount1 =num2bin(bin2num(value)-pledge - fee, 8);
-    bin amount2 = num2bin(pledge, 8);
+        int fee = 1000;
+        bin amount2 = num2bin(pledge, 8);
+        bin amount1 = num2bin(bin2num(value)-pledge - fee, 8);
 
-    // 送金先の計算に使う定数
-    bin opDup = 0x76;
-    bin opEqual = 0x87;
-    bin opHash160 = 0xa9;
-    bin pushHash = 0x14;
-    bin newVarInt1 = 0x17;
-    bin newVarInt2 = 0x19;
-    bin opEqualverify = 0x88;
-    bin opChecksig = 0xac;
+        // 送金先の計算に使う定数
+        bin opDup = 0x76;
+        bin opEqual = 0x87;
+        bin opHash160 = 0xa9;
+        bin pushHash = 0x14;
+        bin newVarInt1 = 0x17;
+        bin newVarInt2 = 0x19;
+        bin opEqualverify = 0x88;
+        bin opChecksig = 0xac;
 
-    // rawscr がこのコントラクトの redeemScript
-    bin [_, rawscr] = scriptCode @ 3;
+        // rawscr がこのコントラクトの redeemScript
+        bin [_, rawscr] = scriptCode @ 3;
+        verify checkSequence(period);
+        verify bin2num(ver) >= 2;
 
-    // 送金先の検証
-    bin out1 = amount1  . newVarInt1 . opHash160 . pushHash . hash160(rawscr) . opEqual ;
-    bin out2 = amount2  . newVarInt2 . opDup . opHash160 . pushHash . pkh . opEqualverify . opChecksig;
-    verify hash256(out1 . out2) == Sha256(hashOutput);
-  }
+        // 送金先の検証
+        bin out1 = amount1  . newVarInt1 . opHash160 . pushHash . hash160(rawscr) . opEqual ;
+        bin out2 = amount2  . newVarInt2 . opDup . opHash160 . pushHash . pkh . opEqualverify . opChecksig;
+        verify hash256(out1 . out2) == Sha256(hashOutput);
+    }
 
-  /**
-   * @param {PubKey} pk -
-   * @param {Sig} sig -
-   */
-  challenge mecenas(PubKey pk, Sig sig) {
-    verify hash160(pk) == pkh2;
-    verify checkSig(sig, pk);
-  }
+    /**
+     * @param {PubKey} pk - 署名した秘密鍵に対応する公開鍵
+     * @param {Sig} sig - トランザクション全体の署名
+     */
+    challenge mecenas(PubKey pk, Sig sig) {
+        verify hash160(pk) == pkh2;
+        verify checkSig(sig, pk);
+    }
+
 }
