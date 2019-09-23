@@ -10,6 +10,8 @@ async function main() {
   const bitbox = new BITBOX({ restURL });
 
   // 秘密鍵
+  // const mecenasWif = process.env.MECENAS_SAMPLE_WIF;
+  // const protegeWif = process.env.MECENAS_SAMPLE_WIF;
   const mecenasWif = "cNTTVyQEkh1ZXnWsB7XhHGfGHQjTxHDqTPBsAzeDQ2aE7tHArcys";
   const protegeWif = "cNTTVyQEkh1ZXnWsB7XhHGfGHQjTxHDqTPBsAzeDQ2aE7tHArcys";
 
@@ -30,11 +32,14 @@ async function main() {
   // compiler を破棄する
   compiler.dispose();
 
+  const period = 0 | (1 << 22); // 22bit目は locktime type flag
+
   // 必要なパラメータを渡して Contract をインスタンス化する
   const instance = new Mecenas({
     pkh: protegePkh,
     pkh2: mecenasPkh,
-    pledge: 1000
+    pledge: 1000,
+    period
   });
   console.log(instance.getAddress(network));
 
@@ -69,22 +74,17 @@ async function main() {
         return input.protege({
           pk: protegePk,
           sig: context.sign(protege, SigHash.SIGHASH_ALL),
-          ver: preimage.slice(0, 4),
-          hPhSo: preimage.slice(4, 104),
-          scriptCode: preimage.slice(104, preimage.length - 52),
-          value: preimage.slice(preimage.length - 52, preimage.length - 44),
-          nSequence: preimage.slice(preimage.length - 44, preimage.length - 40),
-          hashOutput: preimage.slice(preimage.length - 40, preimage.length - 8),
-          tail: preimage.slice(preimage.length - 8, preimage.length)
+          preimage
         });
       },
-      1 | (1 << 22) // 22bit目は locktime type flag
+      period
     )
     // 送金先を指定する
     .to(instance.getAddress(network), balance - 1000 - fee)
     .to(bitbox.ECPair.toCashAddress(protege), 1000);
 
-  console.log(tx.build(true));
+  const rawtx = tx.build(true);
+  console.log(rawtx.toHex());
 
   // トランザクションをブロードキャストする
   const txid = await tx.broadcast(true);
