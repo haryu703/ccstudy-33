@@ -26,7 +26,7 @@ contract Mecenas(Ripemd160 pkh, Ripemd160 pkh2, int pledge, TimeSpan period) {
         verify checkSig(sig, pk);
         // preimage の検証
         verify checkDataSig(toDataSig(sig), sha256(preimage), pk);
-        // 上記2つの検証によって preimage は実際のトランザクションと一致することが検証された
+        // 上記2つの検証で preimage は実際のトランザクションと一致することが保証された
 
         int fee = 1000;
         bin amount2 = num2bin(pledge, 8);

@@ -32,7 +32,8 @@ async function main() {
   // compiler を破棄する
   compiler.dispose();
 
-  const period = 0 | (1 << 22); // 22bit目は locktime type flag
+  // 引き出し間隔を512秒にセットする
+  const period = 1 | (1 << 22); // 22bit目は locktime type flag (BIP-68)
 
   // 必要なパラメータを渡して Contract をインスタンス化する
   const instance = new Mecenas({

@@ -8,7 +8,8 @@
   },
   "scripts": {
     "p2pkh": "ts-node examples/p2pkh/index.ts",
-    "mecenas": "ts-node examples/mecenas/index.ts"
+    "mecenas": "ts-node examples/mecenas/index.ts",
+    "slide": "marp slides"
   },
   "devDependencies": {
     "@marp-team/marp-cli": "^0.13.0",

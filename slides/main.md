@@ -9,8 +9,11 @@ marp: true
 ---
 # 自己紹介
 [haryu703](https://twitter.com/haryu703)
+
+最近の興味
 - Bitcoin Cash
 - Rust
+- クラウド開発環境
 
 ---
 # Bitcoin Cash
@@ -19,7 +22,7 @@ marp: true
   - 1sat/byte (1送金あたり0.1円以下)
 - 0-conf での安全な取引に注力している
   - Replace by fee 機能の削除
-  - (検討中) Avalance, Delta block など
+  - (検討中) Avalanche, Delta block など
 
 ---
 # Bitcoin Script
@@ -110,7 +113,7 @@ NIP NIP NIP   // OP_TRUE
 # Node.js から使う
 Spedn は Node.js 向けの SDK から読み込んで使うことができる
 
-## 1/3 ([全体]())
+## 1/3 ([全体](https://github.com/haryu703/ccstudy-33/blob/master/examples/p2pkh/index.ts))
 ```ts
   // 秘密鍵から今回使うパラメータを計算する
   const alice = bitbox.ECPair.fromWIF(wif);
@@ -123,7 +126,7 @@ Spedn は Node.js 向けの SDK から読み込んで使うことができる
 ```
 
 ---
-## 2/3 ([全体]())
+## 2/3 ([全体](https://github.com/haryu703/ccstudy-33/blob/master/examples/p2pkh/index.ts))
 ```ts
   // 必要なパラメータを渡して Contract をインスタンス化する
   const instance = new P2PKH({ pubKeyHash: alicePkh });
@@ -135,7 +138,7 @@ Spedn は Node.js 向けの SDK から読み込んで使うことができる
 ```
 
 ---
-## 3/3 ([全体]())
+## 3/3 ([全体](https://github.com/haryu703/ccstudy-33/blob/master/examples/p2pkh/index.ts))
 ```ts
   // トランザクションを作成してブロードキャストする
   const txid = await new TxBuilder("testnet")
@@ -152,9 +155,6 @@ Spedn は Node.js 向けの SDK から読み込んで使うことができる
     // トランザクションをブロードキャストする
     .broadcast();
   console.log(txid);
-
-  // compiler を破棄する
-  compiler.dispose();
 ```
 
 ---
@@ -163,31 +163,23 @@ Spedn は Node.js 向けの SDK から読み込んで使うことができる
 使い方: `<sig> <msg> <pubKey> OP_CHECKDATASIG(VERIFY)`
 - 2018/11/15 のハードフォークで追加された OP_CODE
 - 任意のデータに対する署名を検証する
-- シンプルな例では、中央集権的オラクル（レフリーとも）を実現することができる
+- シンプルな例では、中央集権的オラクル（レフリーとも）に使える
 
 ---
 # Bitcoin Covenants
-この資料の中では、Bitcoin Script の中で送金先を指定するコントラクトのことを指す。
-送金先に送金元アドレスを指定することで、トランザクションの**ループが可能になる**。
+この資料の中では、送金先アドレスを強制する Bitcoin Script を指す
+送金先に送金元アドレスを指定することで、トランザクションの**ループが可能になる**
 ## 仕組み
-1. アンロック時にトランザクションの署名 (sig) と「トランザクションのデータ」を渡す
-1. OP_CHECKSIG で sig を検証する
-1. 「トランザクションのデータ」から、署名前のトランザクション (preimage) を復元する
-1. OP_CDS で preimage と sig を検証する
-1. 「トランザクションのデータ」に含まれる送金先の情報を検証する
-
----
-## 署名検証部分について
-Covenants の中で2つの署名検証を行う
+Bitcoin Script の中で2つの署名検証を行う
 - `<sig> <pubKey> CHECKSIG`
-- `<sig> <msg> <pubKey> CHECKDATASIG`
+- `<sig> <sha256(txdata)> <pubKey> CHECKDATASIG`
 
-検証する `<sig>` が同じなら `<msg>` は署名前のトランザクションと一致する
-=> `<msg>` に含まれる送金先情報を利用できる
+2つの署名検証に成功するならば `<txdata>` は署名前のトランザクションと同じ
+=> `<txdata>` に含まれる送金先情報を利用できる
 
 ---
 # Mecenas
-Covenant を利用したコントラクトの一つ。Mecenas はパトロンの意味。
+Covenants を利用したコントラクトの一つ。
 コントラクト作成時に以下の引き出し条件に関するパラメータを決める。
 - 一度に引き出せる金額
 - 引き出せる間隔
@@ -195,65 +187,67 @@ Covenant を利用したコントラクトの一つ。Mecenas はパトロンの
 
 ---
 # Mecenas の実装
-## Contract
+## Contract ([全体](https://github.com/haryu703/ccstudy-33/blob/master/examples/mecenas/mecenas.spedn))
 ```
 /**
  * @param {Ripemd160} pkh - `protege()` 用の引き出し先アドレス
  * @param {Ripemd160} pkh2 - `mecenas()` 用の引き出し先アドレス
  * @param {int} pledge - `protege()` で一度に引き出せる金額
+ * @param {TimeSpan} period - 引き出し間隔
  */
-contract Mecenas(Ripemd160 pkh, Ripemd160 pkh2, int pledge) {
+contract Mecenas(Ripemd160 pkh, Ripemd160 pkh2, int pledge, TimeSpan period) {
 ...
 ```
 
 ---
-## 引き出しの challenge
+## 引き出しの challenge ([全体](https://github.com/haryu703/ccstudy-33/blob/master/examples/mecenas/mecenas.spedn))
 ```
   /**
    * @param {PubKey} pk - 署名した秘密鍵に対応する公開鍵
    * @param {Sig} sig - トランザクション全体の署名
-   * @param {bin} ver - nVersion
-   * @param {bin} hPhSo - hashPrevouts + hashSequence + outpoint
-   * @param {bin} scriptCode - Contract の redeemScript
-   * @param {bin} value - UTXO に含まれる Satoshis
-   * @param {bin} nSequence - TxOut の nSequence
-   * @param {bin} hashOutput - hashOutputs
-   * @param {bin} tail - nLocktime + sighash
+   * @param {bin} preimage - 署名前のシリアライズされたトランザクション
    */
-  challenge protege(
-    PubKey pk,
-    Sig sig,
-    bin ver,
-    bin hPhSo,
-    bin scriptCode,
-    bin value,
-    bin nSequence,
-    bin hashOutput,
-    bin tail
-  ) {
+  challenge protege(PubKey pk, Sig sig, bin preimage) {
   ...
 ```
 
 ---
-## トランザクションの検証
+## トランザクションのデシリアライズ ([全体](https://github.com/haryu703/ccstudy-33/blob/master/examples/mecenas/mecenas.spedn))
 ```
     ...
-    verify checkSig(sig, pk);
-    bin preimage = ver . hPhSo . scriptCode . value . nSequence . hashOutput . tail;
-    verify checkDataSig(toDataSig(sig), sha256(preimage), pk);
-    verify bin2num(ver) >= 2;
-    verify checkSequence(30d); // 引き出し間隔は30日
+    // preimage deserializaion
+    bin [ver, _] = preimage @ 4; // nVersion
+    bin [_, tail] = preimage @ (size(preimage) - 40); // hashOutput + nLocktime + sighash
+    bin [hashOutput, _] = tail @ 32;
+    bin [torso, _] =  preimage @ (size(preimage) - 44);
+    bin [_, belly] = torso @ 104;
+    bin [scriptCode, value] = belly @ (size(belly) - 8);
     ...
 ```
 
 ---
-## 送金額の計算
+## トランザクションの検証 ([全体](https://github.com/haryu703/ccstudy-33/blob/master/examples/mecenas/mecenas.spedn))
+```
+    ...
+    // トランザクションの検証
+    verify checkSig(sig, pk);
+    // preimage の検証
+    verify checkDataSig(toDataSig(sig), sha256(preimage), pk);
+    // 上記2つの検証で preimage は実際のトランザクションと一致することが保証された
+    ...
+    verify checkSequence(period);
+    verify bin2num(ver) >= 2;
+    ...
+```
+
+---
+## 送金額の計算 ([全体](https://github.com/haryu703/ccstudy-33/blob/master/examples/mecenas/mecenas.spedn))
 ```
     int fee = 1000;
     bin amount2 = num2bin(pledge, 8);
-    bin amount1 =num2bin(bin2num(value)-pledge - fee, 8);
+    bin amount1 = num2bin(bin2num(value)-pledge - fee, 8);
 ```
-## 送金先の検証
+## 送金先の検証 ([全体](https://github.com/haryu703/ccstudy-33/blob/master/examples/mecenas/mecenas.spedn))
 ```
     bin out1 = amount1  . newVarInt1 . opHash160 . pushHash . hash160(rawscr) . opEqual ;
     bin out2 = amount2  . newVarInt2 . opDup . opHash160 . pushHash . pkh . opEqualverify . opChecksig;
@@ -263,23 +257,27 @@ contract Mecenas(Ripemd160 pkh, Ripemd160 pkh2, int pledge) {
 ---
 # コンパイル後のスクリプト
 ```txt
-<pkh> <pkh2> <pledge> 3 PICK TRUE EQUAL IF 10 PICK SIZE NIP 4 EQUALVERIFY 9 PICK SIZE NIP PUSH(1)[100]
-EQUALVERIFY 7 PICK SIZE NIP 8 EQUALVERIFY 6 PICK SIZE NIP 4 EQUALVERIFY 5 PICK SIZE NIP PUSH(1)[32]
-EQUALVERIFY 4 PICK SIZE NIP 8 EQUALVERIFY 11 PICK 13 PICK CHECKSIGVERIFY 10 PICK 10 PICK CAT 9 PICK CAT
-8 PICK CAT 7 PICK CAT 6 PICK CAT 5 PICK CAT 12 PICK SIZE 1SUB SPLIT DROP OVER SHA256 15 PICK CHECKDATASIGVERIFY
-11 PICK BIN2NUM 2 GREATERTHANOREQUAL VERIFY PUSH(3)[198,19,64] CHECKSEQUENCEVERIFY DROP PUSH(2)[232,3]
-9 PICK BIN2NUM 3 PICK SUB OVER SUB 8 NUM2BIN 3 PICK 8 NUM2BIN PUSH(1)[118] PUSH(1)[135] PUSH(1)[169]
-PUSH(1)[20] PUSH(1)[23] PUSH(1)[25] PUSH(1)[136] PUSH(1)[172] PUSH(1)[20] PICK 3 SPLIT NIP 10 PICK 5 PICK CAT
-7 PICK CAT 6 PICK CAT OVER HASH160 CAT 8 PICK CAT 10 PICK 5 PICK CAT 10 PICK CAT 8 PICK CAT 7 PICK CAT
-PUSH(1)[17] PICK CAT 4 PICK CAT 3 PICK CAT 2DUP CAT HASH256 PUSH(1)[21] PICK EQUAL
-NIP NIP NIP NIP NIP NIP NIP NIP NIP NIP NIP NIP NIP NIP NIP NIP NIP NIP NIP NIP NIP NIP NIP NIP NIP NIP NIP NIP
-ELSE 3 PICK 2 EQUAL IF 5 PICK HASH160 2 PICK EQUALVERIFY 4 PICK 6 PICK CHECKSIG NIP NIP NIP NIP NIP NIP ELSE FALSE ENDIF ENDIF
+<pkh> <pkh2> <pledge> <period> 4 PICK TRUE EQUAL IF 5 PICK 4 SPLIT DROP 6 PICK DUP SIZE NIP PUSH(1)[40] SUB 
+SPLIT NIP DUP PUSH(1)[32] SPLIT DROP 8 PICK DUP SIZE NIP PUSH(1)[44] SUB SPLIT DROP DUP PUSH(1)[104] SPLIT
+NIP DUP OVER SIZE NIP 8 SUB SPLIT 13 PICK 15 PICK CHECKSIGVERIFY 13 PICK SIZE 1SUB SPLIT DROP 13 PICK 
+SHA256 16 PICK CHECKDATASIGVERIFY PUSH(2)[232,3] 9 PICK 8 NUM2BIN 2 PICK BIN2NUM 11 PICK SUB 2 PICK 
+SUB 8 NUM2BIN PUSH(1)[118] PUSH(1)[135] PUSH(1)[169] PUSH(1)[20] PUSH(1)[23] PUSH(1)[25] PUSH(1)[136] 
+PUSH(1)[172] 12 PICK 3 SPLIT NIP PUSH(1)[19] PICK CHECKSEQUENCEVERIFY DROP PUSH(1)[18] PICK BIN2NUM 
+2 GREATERTHANOREQUAL VERIFY 9 PICK 5 PICK CAT 7 PICK CAT 6 PICK CAT OVER HASH160 CAT 8 PICK CAT 11 PICK 
+5 PICK CAT 10 PICK CAT 8 PICK CAT 7 PICK CAT PUSH(1)[24] PICK CAT 4 PICK CAT 3 PICK CAT 2DUP CAT HASH256 PUSH(1)[19] PICK EQUAL 
+NIP NIP NIP NIP NIP NIP NIP NIP NIP NIP NIP NIP NIP NIP NIP NIP NIP NIP NIP NIP NIP NIP NIP NIP NIP NIP NIP NIP NIP 
+ELSE 4 PICK 2 EQUAL IF 6 PICK HASH160 3 PICK EQUALVERIFY 5 PICK 7 PICK CHECKSIG NIP NIP NIP NIP NIP NIP NIP ELSE FALSE ENDIF ENDIF
 ```
+- 最適化支援ツールの [Cashproof](https://github.com/EyeOfPython/cashproof) が開発中
+- 困ったら Bitcoin Script をステップ実行できる [meep](https://github.com/gcash/meep) でデバッグ
 
 ---
 # まとめ
 - Spedn を使うと Bitcoin Script を簡単に書くことができる
 - OP_CHECKDATASIG はループするトランザクションを可能にする
+
+## 資料とサンプルコード
+https://github.com/haryu703/ccstudy-33
 
 ---
 # 参考資料など
