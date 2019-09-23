@@ -14,12 +14,12 @@ contract Mecenas(Ripemd160 pkh, Ripemd160 pkh2, int pledge, TimeSpan period) {
     challenge protege(PubKey pk, Sig sig, bin preimage) {
 
         // preimage deserializaion
-        bin ver = fst(preimage @ 4); // nVersion
-        bin tail= snd(preimage @ size(preimage) - 40); // hashOutput + nLocktime + sighash
-        bin hashOutput= fst(tail @ 32);
-        bin torso =  fst(preimage @ size(preimage) - 44);
-        bin belly = snd(torso @ 104);
-        bin [scriptCode,value] = belly @ size(belly) - 8;
+        bin [ver, _] = preimage @ 4; // nVersion
+        bin [_, tail] = preimage @ (size(preimage) - 40); // hashOutput + nLocktime + sighash
+        bin [hashOutput, _] = tail @ 32;
+        bin [torso, _] =  preimage @ (size(preimage) - 44);
+        bin [_, belly] = torso @ 104;
+        bin [scriptCode, value] = belly @ (size(belly) - 8);
 
         //verify hash160(pk) == pkh; // Anyone Can Execute
         // トランザクションの検証
