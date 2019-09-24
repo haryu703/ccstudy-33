@@ -30,7 +30,7 @@ contract Mecenas(Ripemd160 pkh, Ripemd160 pkh2, int pledge, TimeSpan period) {
 
         int fee = 1000;
         bin amount2 = num2bin(pledge, 8);
-        bin amount1 = num2bin(bin2num(value)-pledge - fee, 8);
+        bin amount1 = num2bin(bin2num(value) - pledge - fee, 8);
 
         // 送金先の計算に使う定数
         bin opDup = 0x76;

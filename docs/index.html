@@ -125,7 +125,7 @@ article#presentation > svg[data-marpit-svg] > foreignObject[data-marpit-advanced
 <li>Bitcoin のトランザクションをロック・アンロックするスクリプトのこと</li>
 <li><strong>ループを表現できない</strong></li>
 </ul>
-<p>例) P2PKH のスクリプトは以下のように記述する。</p>
+<p>例) P2PKH のスクリプトは以下のように記述する</p>
 <ul>
 <li>scriptPubKey (Locking Script)</li>
 </ul>
@@ -148,25 +148,25 @@ article#presentation > svg[data-marpit-svg] > foreignObject[data-marpit-advanced
 <h1>その他の言語</h1>
 <p><img src="https://news.bitcoin.com/wp-content/uploads/2019/05/2019-05-29-10-33-34.jpg" alt="w:900" style="width:900px;" /><br />
 <a href="https://news.bitcoin.com/cashscript-is-coming-bringing-ethereum-like-smart-contracts-to-bitcoin-cash/">https://news.bitcoin.com/cashscript-is-coming-bringing-ethereum-like-smart-contracts-to-bitcoin-cash/</a></p>
-<p>Bitcoin Core では Miniscript などが開発されている。</p>
+<p>Bitcoin Core では Miniscript などが開発されている</p>
 </section>
 </foreignObject></svg><svg data-marpit-svg="" viewBox="0 0 1280 720"><foreignObject width="1280" height="720"><section id="7">
 <h1>Spedn の使い方</h1>
 <h2>Contract の記述</h2>
 <p>P2PKH を Spedn で記述すると下記のようになる (<a href="https://github.com/haryu703/ccstudy-33/blob/master/examples/p2pkh/p2pkh.spedn">全体</a>)</p>
-<pre><code><svg data-marp-fitting="svg" data-marp-fitting-code><foreignObject><span data-marp-fitting-svg-content><span data-marp-fitting-svg-content-wrap><span class="hljs-comment">/**
+<pre><code class="language-c"><svg data-marp-fitting="svg" data-marp-fitting-code><foreignObject><span data-marp-fitting-svg-content><span data-marp-fitting-svg-content-wrap><span class="hljs-comment">/**
  * @param {Ripemd160} pubKeyHash - pubkey-hash
  */</span>
-contract <span class="hljs-constructor">PayToPublicKeyHash(Ripemd160 <span class="hljs-params">pubKeyHash</span>)</span> {
+<span class="hljs-function">contract <span class="hljs-title">PayToPublicKeyHash</span><span class="hljs-params">(Ripemd160 pubKeyHash)</span> </span>{
   <span class="hljs-comment">/**
    * @param {PubKey} pubKey - pubkey
    * @param {Sig} sig - signature
    */</span>
-  challenge spend(PubKey pubKey, Sig <span class="hljs-keyword">sig</span>) {
+  <span class="hljs-function">challenge <span class="hljs-title">spend</span><span class="hljs-params">(PubKey pubKey, Sig sig)</span> </span>{
     <span class="hljs-comment">// OP_HASH160 &lt;pubkey-hash&gt; OP_EQUALVERIFY</span>
-    verify hash160(pubKey)<span class="hljs-operator"> == </span>pubKeyHash;
+    <span class="hljs-function">verify <span class="hljs-title">hash160</span><span class="hljs-params">(pubKey)</span> </span>== pubKeyHash;
     <span class="hljs-comment">// OP_CHECKSIG</span>
-    verify check<span class="hljs-constructor">Sig(<span class="hljs-params">sig</span>, <span class="hljs-params">pubKey</span>)</span>;
+    <span class="hljs-function">verify <span class="hljs-title">checkSig</span><span class="hljs-params">(sig, pubKey)</span></span>;
   }
 }
 </span></span></foreignObject></svg></code></pre>
@@ -276,8 +276,8 @@ NIP NIP NIP   // OP_TRUE
 </section>
 </foreignObject></svg><svg data-marpit-svg="" viewBox="0 0 1280 720"><foreignObject width="1280" height="720"><section id="15">
 <h1>Mecenas</h1>
-<p>Covenants を利用したコントラクトの一つ。<br />
-コントラクト作成時に以下の引き出し条件に関するパラメータを決める。</p>
+<p>Covenants を利用したコントラクトの一つ</p>
+<p>コントラクト作成時に以下の引き出し条件に関するパラメータを決める</p>
 <ul>
 <li>一度に引き出せる金額</li>
 <li>引き出せる間隔</li>
@@ -287,30 +287,30 @@ NIP NIP NIP   // OP_TRUE
 </foreignObject></svg><svg data-marpit-svg="" viewBox="0 0 1280 720"><foreignObject width="1280" height="720"><section id="16">
 <h1>Mecenas の実装</h1>
 <h2>Contract (<a href="https://github.com/haryu703/ccstudy-33/blob/master/examples/mecenas/mecenas.spedn">全体</a>)</h2>
-<pre><code><svg data-marp-fitting="svg" data-marp-fitting-code><foreignObject><span data-marp-fitting-svg-content><span data-marp-fitting-svg-content-wrap><span class="hljs-comment"><span class="markdown">/**
-<span class="hljs-bullet"> * </span>@param {Ripemd160} pkh - <span class="hljs-code">`protege()`</span> 用の引き出し先アドレス
-<span class="hljs-bullet"> * </span>@param {Ripemd160} pkh2 - <span class="hljs-code">`mecenas()`</span> 用の引き出し先アドレス
-<span class="hljs-bullet"> * </span>@param {int} pledge - <span class="hljs-code">`protege()`</span> で一度に引き出せる金額
-<span class="hljs-bullet"> * </span>@param {TimeSpan} period - 引き出し間隔
- */</span></span>
-contract Mecenas(Ripemd160 pkh, Ripemd160 pkh2, <span class="hljs-built_in">int</span> pledge, TimeSpan period) {
+<pre><code class="language-c"><svg data-marp-fitting="svg" data-marp-fitting-code><foreignObject><span data-marp-fitting-svg-content><span data-marp-fitting-svg-content-wrap><span class="hljs-comment">/**
+ * @param {Ripemd160} pkh - `protege()` 用の引き出し先アドレス
+ * @param {Ripemd160} pkh2 - `mecenas()` 用の引き出し先アドレス
+ * @param {int} pledge - `protege()` で一度に引き出せる金額
+ * @param {TimeSpan} period - 引き出し間隔
+ */</span>
+<span class="hljs-function">contract <span class="hljs-title">Mecenas</span><span class="hljs-params">(Ripemd160 pkh, Ripemd160 pkh2, <span class="hljs-keyword">int</span> pledge, TimeSpan period)</span> </span>{
 ...
 </span></span></foreignObject></svg></code></pre>
 </section>
 </foreignObject></svg><svg data-marpit-svg="" viewBox="0 0 1280 720"><foreignObject width="1280" height="720"><section id="17">
 <h2>引き出しの challenge (<a href="https://github.com/haryu703/ccstudy-33/blob/master/examples/mecenas/mecenas.spedn">全体</a>)</h2>
-<pre><code><svg data-marp-fitting="svg" data-marp-fitting-code><foreignObject><span data-marp-fitting-svg-content><span data-marp-fitting-svg-content-wrap>  /**
-   * @<span class="hljs-keyword">param</span> {PubKey} <span class="hljs-keyword">pk</span> - 署名した秘密鍵に対応する公開鍵
-   * @<span class="hljs-keyword">param</span> {Sig} <span class="hljs-keyword">sig</span> - トランザクション全体の署名
-   * @<span class="hljs-keyword">param</span> {bin} <span class="hljs-keyword">preimage</span> - 署名前のシリアライズされたトランザクション
-   */
-  challenge protege(PubKey pk, Sig sig, bin preimage) {
+<pre><code class="language-c"><svg data-marp-fitting="svg" data-marp-fitting-code><foreignObject><span data-marp-fitting-svg-content><span data-marp-fitting-svg-content-wrap>  <span class="hljs-comment">/**
+   * @param {PubKey} pk - 署名した秘密鍵に対応する公開鍵
+   * @param {Sig} sig - トランザクション全体の署名
+   * @param {bin} preimage - 署名前のシリアライズされたトランザクション
+   */</span>
+  <span class="hljs-function">challenge <span class="hljs-title">protege</span><span class="hljs-params">(PubKey pk, Sig sig, bin preimage)</span> </span>{
   ...
 </span></span></foreignObject></svg></code></pre>
 </section>
 </foreignObject></svg><svg data-marpit-svg="" viewBox="0 0 1280 720"><foreignObject width="1280" height="720"><section id="18">
 <h2>トランザクションのデシリアライズ (<a href="https://github.com/haryu703/ccstudy-33/blob/master/examples/mecenas/mecenas.spedn">全体</a>)</h2>
-<pre><code><svg data-marp-fitting="svg" data-marp-fitting-code><foreignObject><span data-marp-fitting-svg-content><span data-marp-fitting-svg-content-wrap>    ...
+<pre><code class="language-c"><svg data-marp-fitting="svg" data-marp-fitting-code><foreignObject><span data-marp-fitting-svg-content><span data-marp-fitting-svg-content-wrap>    ...
     <span class="hljs-comment">// preimage deserializaion</span>
     bin [ver, _] = preimage @ <span class="hljs-number">4</span>; <span class="hljs-comment">// nVersion</span>
     bin [_, tail] = preimage @ (size(preimage) - <span class="hljs-number">40</span>); <span class="hljs-comment">// hashOutput + nLocktime + sighash</span>
@@ -323,29 +323,29 @@ contract Mecenas(Ripemd160 pkh, Ripemd160 pkh2, <span class="hljs-built_in">int<
 </section>
 </foreignObject></svg><svg data-marpit-svg="" viewBox="0 0 1280 720"><foreignObject width="1280" height="720"><section id="19">
 <h2>トランザクションの検証 (<a href="https://github.com/haryu703/ccstudy-33/blob/master/examples/mecenas/mecenas.spedn">全体</a>)</h2>
-<pre><code><svg data-marp-fitting="svg" data-marp-fitting-code><foreignObject><span data-marp-fitting-svg-content><span data-marp-fitting-svg-content-wrap><span class="hljs-operator">    ...
-    </span><span class="hljs-comment">// トランザクションの検証</span>
-    verify check<span class="hljs-constructor">Sig(<span class="hljs-params">sig</span>, <span class="hljs-params">pk</span>)</span>;
+<pre><code class="language-c"><svg data-marp-fitting="svg" data-marp-fitting-code><foreignObject><span data-marp-fitting-svg-content><span data-marp-fitting-svg-content-wrap>    ...
+    <span class="hljs-comment">// トランザクションの検証</span>
+    <span class="hljs-function">verify <span class="hljs-title">checkSig</span><span class="hljs-params">(sig, pk)</span></span>;
     <span class="hljs-comment">// preimage の検証</span>
-    verify check<span class="hljs-constructor">DataSig(<span class="hljs-params">toDataSig</span>(<span class="hljs-params">sig</span>)</span>, sha256(preimage), pk);
-    <span class="hljs-comment">// 上記2つの検証で preimage は実際のトランザクションと一致することが保証された</span><span class="hljs-operator">
+    <span class="hljs-function">verify <span class="hljs-title">checkDataSig</span><span class="hljs-params">(toDataSig(sig), sha256(preimage), pk)</span></span>;
+    <span class="hljs-comment">// 上記2つの検証で preimage は実際のトランザクションと一致することが保証された</span>
     ...
-    </span>verify check<span class="hljs-constructor">Sequence(<span class="hljs-params">period</span>)</span>;
-    verify bin2num(ver) &gt;= <span class="hljs-number">2</span>;<span class="hljs-operator">
+    <span class="hljs-function">verify <span class="hljs-title">checkSequence</span><span class="hljs-params">(period)</span></span>;
+    <span class="hljs-function">verify <span class="hljs-title">bin2num</span><span class="hljs-params">(ver)</span> &gt;</span>= <span class="hljs-number">2</span>;
     ...
-</span></span></span></foreignObject></svg></code></pre>
+</span></span></foreignObject></svg></code></pre>
 </section>
 </foreignObject></svg><svg data-marpit-svg="" viewBox="0 0 1280 720"><foreignObject width="1280" height="720"><section id="20">
 <h2>送金額の計算 (<a href="https://github.com/haryu703/ccstudy-33/blob/master/examples/mecenas/mecenas.spedn">全体</a>)</h2>
-<pre><code><svg data-marp-fitting="svg" data-marp-fitting-code><foreignObject><span data-marp-fitting-svg-content><span data-marp-fitting-svg-content-wrap>    int fee = <span class="hljs-number">1000</span><span class="hljs-comment">;</span>
-    bin amount2 = num2bin(<span class="hljs-name">pledge</span>, <span class="hljs-number">8</span>)<span class="hljs-comment">;</span>
-    bin amount1 = num2bin(<span class="hljs-name">bin2num</span>(<span class="hljs-name">value</span>)-pledge - fee, <span class="hljs-number">8</span>)<span class="hljs-comment">;</span>
+<pre><code class="language-c"><svg data-marp-fitting="svg" data-marp-fitting-code><foreignObject><span data-marp-fitting-svg-content><span data-marp-fitting-svg-content-wrap>    <span class="hljs-keyword">int</span> fee = <span class="hljs-number">1000</span>;
+    bin amount2 = num2bin(pledge, <span class="hljs-number">8</span>);
+    bin amount1 = num2bin(bin2num(value) - pledge - fee, <span class="hljs-number">8</span>);
 </span></span></foreignObject></svg></code></pre>
 <h2>送金先の検証 (<a href="https://github.com/haryu703/ccstudy-33/blob/master/examples/mecenas/mecenas.spedn">全体</a>)</h2>
-<pre><code><svg data-marp-fitting="svg" data-marp-fitting-code><foreignObject><span data-marp-fitting-svg-content><span data-marp-fitting-svg-content-wrap>    <span class="hljs-keyword">bin </span>out1 = amount1  . newVarInt1 . opHash160 . pushHash . hash160(rawscr) . opEqual <span class="hljs-comment">;</span>
-    <span class="hljs-keyword">bin </span>out2 = amount2  . newVarInt2 . opDup . opHash160 . pushHash . pkh . opEqualverify . opChecksig<span class="hljs-comment">;</span>
-    verify hash256(out1 . out2) == <span class="hljs-keyword">Sha256(hashOutput);
-</span></span></span></foreignObject></svg></code></pre>
+<pre><code class="language-c"><svg data-marp-fitting="svg" data-marp-fitting-code><foreignObject><span data-marp-fitting-svg-content><span data-marp-fitting-svg-content-wrap>    bin out1 = amount1  . newVarInt1 . opHash160 . pushHash . hash160(rawscr) . opEqual ;
+    bin out2 = amount2  . newVarInt2 . opDup . opHash160 . pushHash . pkh . opEqualverify . opChecksig;
+    <span class="hljs-function">verify <span class="hljs-title">hash256</span><span class="hljs-params">(out1 . out2)</span> </span>== Sha256(hashOutput);
+</span></span></foreignObject></svg></code></pre>
 </section>
 </foreignObject></svg><svg data-marpit-svg="" viewBox="0 0 1280 720"><foreignObject width="1280" height="720"><section id="21">
 <h1>コンパイル後のスクリプト</h1>

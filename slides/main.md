@@ -29,7 +29,7 @@ marp: true
 - Bitcoin のトランザクションをロック・アンロックするスクリプトのこと
 - **ループを表現できない**
 
-例) P2PKH のスクリプトは以下のように記述する。
+例) P2PKH のスクリプトは以下のように記述する
 - scriptPubKey (Locking Script)
 ```
 OP_DUP OP_HASH160 <pubkey-hash> OP_EQUALVERIFY OP_CHECKSIG
@@ -51,13 +51,13 @@ OP_DUP OP_HASH160 <pubkey-hash> OP_EQUALVERIFY OP_CHECKSIG
 ![w:900](https://news.bitcoin.com/wp-content/uploads/2019/05/2019-05-29-10-33-34.jpg)
 https://news.bitcoin.com/cashscript-is-coming-bringing-ethereum-like-smart-contracts-to-bitcoin-cash/
 
-Bitcoin Core では Miniscript などが開発されている。
+Bitcoin Core では Miniscript などが開発されている
 
 ---
 # Spedn の使い方
 ## Contract の記述
 P2PKH を Spedn で記述すると下記のようになる ([全体](https://github.com/haryu703/ccstudy-33/blob/master/examples/p2pkh/p2pkh.spedn))
-```
+```c
 /**
  * @param {Ripemd160} pubKeyHash - pubkey-hash
  */
@@ -179,8 +179,9 @@ Bitcoin Script の中で2つの署名検証を行う
 
 ---
 # Mecenas
-Covenants を利用したコントラクトの一つ。
-コントラクト作成時に以下の引き出し条件に関するパラメータを決める。
+Covenants を利用したコントラクトの一つ
+
+コントラクト作成時に以下の引き出し条件に関するパラメータを決める
 - 一度に引き出せる金額
 - 引き出せる間隔
 - 引き出し先アドレス
@@ -188,7 +189,7 @@ Covenants を利用したコントラクトの一つ。
 ---
 # Mecenas の実装
 ## Contract ([全体](https://github.com/haryu703/ccstudy-33/blob/master/examples/mecenas/mecenas.spedn))
-```
+```c
 /**
  * @param {Ripemd160} pkh - `protege()` 用の引き出し先アドレス
  * @param {Ripemd160} pkh2 - `mecenas()` 用の引き出し先アドレス
@@ -201,7 +202,7 @@ contract Mecenas(Ripemd160 pkh, Ripemd160 pkh2, int pledge, TimeSpan period) {
 
 ---
 ## 引き出しの challenge ([全体](https://github.com/haryu703/ccstudy-33/blob/master/examples/mecenas/mecenas.spedn))
-```
+```c
   /**
    * @param {PubKey} pk - 署名した秘密鍵に対応する公開鍵
    * @param {Sig} sig - トランザクション全体の署名
@@ -213,7 +214,7 @@ contract Mecenas(Ripemd160 pkh, Ripemd160 pkh2, int pledge, TimeSpan period) {
 
 ---
 ## トランザクションのデシリアライズ ([全体](https://github.com/haryu703/ccstudy-33/blob/master/examples/mecenas/mecenas.spedn))
-```
+```c
     ...
     // preimage deserializaion
     bin [ver, _] = preimage @ 4; // nVersion
@@ -227,7 +228,7 @@ contract Mecenas(Ripemd160 pkh, Ripemd160 pkh2, int pledge, TimeSpan period) {
 
 ---
 ## トランザクションの検証 ([全体](https://github.com/haryu703/ccstudy-33/blob/master/examples/mecenas/mecenas.spedn))
-```
+```c
     ...
     // トランザクションの検証
     verify checkSig(sig, pk);
@@ -242,13 +243,13 @@ contract Mecenas(Ripemd160 pkh, Ripemd160 pkh2, int pledge, TimeSpan period) {
 
 ---
 ## 送金額の計算 ([全体](https://github.com/haryu703/ccstudy-33/blob/master/examples/mecenas/mecenas.spedn))
-```
+```c
     int fee = 1000;
     bin amount2 = num2bin(pledge, 8);
-    bin amount1 = num2bin(bin2num(value)-pledge - fee, 8);
+    bin amount1 = num2bin(bin2num(value) - pledge - fee, 8);
 ```
 ## 送金先の検証 ([全体](https://github.com/haryu703/ccstudy-33/blob/master/examples/mecenas/mecenas.spedn))
-```
+```c
     bin out1 = amount1  . newVarInt1 . opHash160 . pushHash . hash160(rawscr) . opEqual ;
     bin out2 = amount2  . newVarInt2 . opDup . opHash160 . pushHash . pkh . opEqualverify . opChecksig;
     verify hash256(out1 . out2) == Sha256(hashOutput);
